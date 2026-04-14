@@ -8,6 +8,7 @@ use App\Models\DetailPeminjaman;
 use App\Models\LogAktivitas;
 use App\Models\Peminjaman;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -26,6 +27,16 @@ class PeminjamanController extends Controller
             ->withQueryString();
 
         return view('admin.peminjaman.index', compact('peminjaman'));
+    }
+
+    public function print(Request $request): View
+    {
+        $peminjaman = Peminjaman::with(['user', 'detailPeminjaman.alat'])
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->latest()
+            ->get();
+
+        return view('admin.peminjaman.print', compact('peminjaman'));
     }
 
     public function edit(Peminjaman $peminjaman): View
@@ -48,39 +59,44 @@ class PeminjamanController extends Controller
 
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
-            'alat_id' => ['required', 'exists:alat,id'],
+            'alat_id' => ['required', 'exists:alats,id'],
             'jumlah' => ['required', 'integer', 'min:1'],
-            'tanggal_pinjam' => ['required', 'date'],
-            'tanggal_kembali_rencana' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
-            'status' => ['required', 'in:pending,disetujui,ditolak,selesai'],
+            'tanggal_pinjam' => ['required', 'date_format:Y-m-d'],
+            'tanggal_kembali_rencana' => ['required', 'date_format:Y-m-d'],
+            'status' => ['required', 'in:pending,disetujui,tunda_pengembalian,ditolak,selesai'],
         ]);
 
-        DB::transaction(function () use ($validated, $peminjaman, $request) {
-            $peminjaman->update([
-                'user_id' => $validated['user_id'],
-                'tanggal_pinjam' => $validated['tanggal_pinjam'],
-                'tanggal_kembali_rencana' => $validated['tanggal_kembali_rencana'],
-                'status' => $validated['status'],
-            ]);
+        $tanggalPinjam = Carbon::createFromFormat('Y-m-d', $validated['tanggal_pinjam']);
+        $tanggalKembaliRencana = Carbon::createFromFormat('Y-m-d', $validated['tanggal_kembali_rencana']);
 
+        if ($tanggalKembaliRencana->lt($tanggalPinjam)) {
+            return back()
+                ->withErrors(['tanggal_kembali_rencana' => 'Tanggal kembali rencana harus setelah atau sama dengan tanggal pinjam.'])
+                ->withInput();
+        }
+
+        DB::transaction(function () use ($validated, $peminjaman, $request) {
             $detail = $peminjaman->detailPeminjaman()->first();
+            $oldStatus = $peminjaman->status;
+            $newStatus = $validated['status'];
+            $oldAffectsStock = in_array($oldStatus, ['disetujui', 'tunda_pengembalian'], true);
+            $newAffectsStock = in_array($newStatus, ['disetujui', 'tunda_pengembalian'], true);
 
             if ($detail) {
-
-                $alatLama = Alat::find($detail->alat_id);
-                if ($alatLama) {
-                    $alatLama->stok += $detail->jumlah;
-                    $alatLama->save();
+                if ($oldAffectsStock) {
+                    $alatLama = Alat::find($detail->alat_id);
+                    if ($alatLama) {
+                        $alatLama->increment('stok', $detail->jumlah);
+                    }
                 }
 
-                $alatBaru = Alat::findOrFail($validated['alat_id']);
-
-                if ($alatBaru->stok < $validated['jumlah']) {
-                    throw new \Exception('Stok alat tidak cukup.');
+                if ($newAffectsStock) {
+                    $alatBaru = Alat::findOrFail($validated['alat_id']);
+                    if ($alatBaru->stok < $validated['jumlah']) {
+                        throw new \Exception('Stok alat tidak cukup.');
+                    }
+                    $alatBaru->decrement('stok', $validated['jumlah']);
                 }
-
-                $alatBaru->stok -= $validated['jumlah'];
-                $alatBaru->save();
 
                 $detail->update([
                     'alat_id' => $validated['alat_id'],
@@ -88,21 +104,27 @@ class PeminjamanController extends Controller
                 ]);
 
             } else {
-                $alat = Alat::findOrFail($validated['alat_id']);
-
-                if ($alat->stok < $validated['jumlah']) {
-                    throw new \Exception('Stok alat tidak cukup.');
+                if ($newAffectsStock) {
+                    $alat = Alat::findOrFail($validated['alat_id']);
+                    if ($alat->stok < $validated['jumlah']) {
+                        throw new \Exception('Stok alat tidak cukup.');
+                    }
+                    $alat->decrement('stok', $validated['jumlah']);
                 }
 
-                $alat->stok -= $validated['jumlah'];
-                $alat->save();
-
-                DetailPeminjaman::create([
+                $detail = DetailPeminjaman::create([
                     'peminjaman_id' => $peminjaman->id,
                     'alat_id' => $validated['alat_id'],
                     'jumlah' => $validated['jumlah'],
                 ]);
             }
+
+            $peminjaman->update([
+                'user_id' => $validated['user_id'],
+                'tanggal_pinjam' => $validated['tanggal_pinjam'],
+                'tanggal_kembali_rencana' => $validated['tanggal_kembali_rencana'],
+                'status' => $newStatus,
+            ]);
 
             LogAktivitas::create([
                 'user_id' => $request->user()->id,
@@ -118,12 +140,14 @@ class PeminjamanController extends Controller
     public function destroy(Request $request, Peminjaman $peminjaman): RedirectResponse
     {
         DB::transaction(function () use ($peminjaman, $request) {
+            $shouldRestoreStock = in_array($peminjaman->status, ['disetujui', 'tunda_pengembalian'], true);
 
-            foreach ($peminjaman->detailPeminjaman as $detail) {
-                $alat = Alat::find($detail->alat_id);
-                if ($alat) {
-                    $alat->stok += $detail->jumlah;
-                    $alat->save();
+            if ($shouldRestoreStock) {
+                foreach ($peminjaman->detailPeminjaman as $detail) {
+                    $alat = Alat::find($detail->alat_id);
+                    if ($alat) {
+                        $alat->increment('stok', $detail->jumlah);
+                    }
                 }
             }
 

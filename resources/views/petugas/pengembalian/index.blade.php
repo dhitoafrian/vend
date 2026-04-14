@@ -30,18 +30,18 @@
                         <td class="py-2">{{ $item->peminjaman?->user?->name }}</td>
                         <td>{{ $detail?->alat?->nama_alat }}</td>
                         <td>{{ $item->tanggal_kembali?->format('Y-m-d') }}</td>
-                        <td>{{ ucfirst($item->status) }}</td>
-                        <td>{{ $item->denda }}</td>
+                        <td>
+                            <span class="inline-block px-2 py-1 text-xs rounded {{ $item->status === 'terlambat' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                                {{ ucfirst($item->status) }}
+                            </span>
+                        </td>
+                        <td>Rp {{ number_format($item->denda, 0, ',', '.') }}</td>
                         <td class="text-right">
-                            <form method="POST" action="{{ route('petugas.pengembalian.verify', $item) }}" class="inline-flex items-center gap-2">
+                            <form method="POST" action="{{ route('petugas.pengembalian.verify', $item) }}" class="inline">
                                 @csrf
                                 @method('PATCH')
-                                <select name="status" class="border rounded px-2 py-1">
-                                    <option value="tepat" @selected($item->status === 'tepat')>Tepat</option>
-                                    <option value="terlambat" @selected($item->status === 'terlambat')>Terlambat</option>
-                                </select>
-                                <input type="number" name="denda" min="0" value="{{ $item->denda }}" class="border rounded px-2 py-1 w-24">
-                                <button class="text-blue-600">Verifikasi</button>
+                                <input type="hidden" name="aksi" value="setujui">
+                                <button class="text-green-600">Setujui</button>
                             </form>
                         </td>
                     </tr>

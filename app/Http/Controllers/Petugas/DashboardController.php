@@ -17,7 +17,7 @@ class DashboardController extends Controller
             ->get();
 
         $pendingPengembalian = Peminjaman::with('user')
-            ->where('status', 'pending_return')
+            ->where('status', 'tunda_pengembalian')
             ->latest()
             ->limit(5)
             ->get();

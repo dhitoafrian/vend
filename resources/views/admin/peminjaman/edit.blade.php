@@ -15,7 +15,7 @@
         <input name="tanggal_pinjam" type="date" value="{{ old('tanggal_pinjam', $peminjaman->tanggal_pinjam?->format('Y-m-d')) }}" class="w-full border rounded px-3 py-2">
         <input name="tanggal_kembali_rencana" type="date" value="{{ old('tanggal_kembali_rencana', $peminjaman->tanggal_kembali_rencana?->format('Y-m-d')) }}" class="w-full border rounded px-3 py-2">
         <select name="status" class="w-full border rounded px-3 py-2">
-            @foreach (['pending', 'disetujui', 'ditolak', 'selesai'] as $status)
+            @foreach (['pending', 'disetujui', 'tunda_pengembalian', 'ditolak', 'selesai'] as $status)
                 <option value="{{ $status }}" @selected(old('status', $peminjaman->status) === $status)>{{ ucfirst($status) }}</option>
             @endforeach
         </select>

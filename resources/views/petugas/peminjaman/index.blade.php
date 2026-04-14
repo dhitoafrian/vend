@@ -4,7 +4,7 @@
             <form method="GET">
                 <select name="status" class="border rounded px-3 py-2">
                     <option value="">Semua status</option>
-                    @foreach (['pending', 'disetujui', 'ditolak', 'selesai'] as $status)
+                    @foreach (['pending', 'disetujui', 'tunda_pengembalian', 'ditolak', 'selesai'] as $status)
                         <option value="{{ $status }}" @selected(request('status') === $status)>{{ ucfirst($status) }}</option>
                     @endforeach
                 </select>

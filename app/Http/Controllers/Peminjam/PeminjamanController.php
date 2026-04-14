@@ -7,6 +7,7 @@ use App\Models\Alat;
 use App\Models\DetailPeminjaman;
 use App\Models\LogAktivitas;
 use App\Models\Peminjaman;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -33,11 +34,28 @@ class PeminjamanController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'alat_id' => ['required', 'exists:alat,id'],
+            'alat_id' => ['required', 'exists:alats,id'],
             'jumlah' => ['required', 'integer', 'min:1'],
-            'tanggal_pinjam' => ['required', 'date'],
-            'tanggal_kembali_rencana' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
+            'tanggal_pinjam' => ['required', 'date_format:Y-m-d'],
+            'tanggal_kembali_rencana' => ['required', 'date_format:Y-m-d'],
         ]);
+
+        $tanggalPinjam = Carbon::createFromFormat('Y-m-d', $validated['tanggal_pinjam']);
+        $tanggalKembaliRencana = Carbon::createFromFormat('Y-m-d', $validated['tanggal_kembali_rencana']);
+
+        if ($tanggalKembaliRencana->lt($tanggalPinjam)) {
+            return back()
+                ->withErrors(['tanggal_kembali_rencana' => 'Tanggal kembali rencana harus setelah atau sama dengan tanggal pinjam.'])
+                ->withInput();
+        }
+
+        $alat = Alat::findOrFail($validated['alat_id']);
+
+        if ($validated['jumlah'] > $alat->stok) {
+            return back()
+                ->withErrors(['jumlah' => 'Jumlah melebihi stok tersedia (' . $alat->stok . ')'])
+                ->withInput();
+        }
 
         $peminjaman = Peminjaman::create([
             'user_id' => $request->user()->id,

@@ -6,11 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Peminjaman extends Model
 {
+
+    protected $table = 'peminjamen';
+
     protected $fillable = [
         'user_id',
         'tanggal_pinjam',
         'tanggal_kembali_rencana',
         'status'
+    ];
+
+    protected $casts = [
+        'tanggal_pinjam' => 'date',
+        'tanggal_kembali_rencana' => 'date',
     ];
 
     public function user()
