@@ -12,6 +12,10 @@ use App\Http\Controllers\Petugas\DashboardController as PetugasDashboardControll
 use App\Http\Controllers\Petugas\PeminjamanController as PetugasPeminjamanController;
 use App\Http\Controllers\Petugas\PengembalianController as PetugasPengembalianController;
 use App\Http\Controllers\Petugas\LaporanController as PetugasLaporanController;
+use App\Http\Controllers\Peminjam\DashboardController as PeminjamDashboardController;
+use App\Http\Controllers\Peminjam\AlatController as PeminjamAlatController;
+use App\Http\Controllers\Peminjam\PeminjamanController as PeminjamPeminjamanController;
+use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
