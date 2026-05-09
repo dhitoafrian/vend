@@ -31,11 +31,19 @@ class UserSeeder extends Seeder
                 'email' => 'budi111@gmail.com',
                 'password' => Hash::make('password'),
                 'role' => 'peminjam'
-
             ]
         ];
+
         foreach ($users as $user) {
-            User::create($user);
-        };
+            // Menggunakan updateOrCreate agar tidak error saat redeploy
+            User::updateOrCreate(
+                ['email' => $user['email']], // Cek berdasarkan email
+                [
+                    'name' => $user['name'],
+                    'password' => $user['password'],
+                    'role' => $user['role'],
+                ]
+            );
+        }
     }
 }
