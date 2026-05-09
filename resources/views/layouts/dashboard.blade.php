@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'SIPAT') }}</title>
+    <title>{{ config('app.name', 'VEND') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-100 font-sans antialiased">
     <div class="min-h-screen md:flex">
         <aside class="w-full md:w-64 bg-slate-900 text-slate-100">
             <div class="p-4 border-b border-slate-800">
-                <p class="font-semibold text-lg">SIPAT</p>
+                <p class="font-semibold text-lg">VEND</p>
                 <p class="text-xs text-slate-300">{{ auth()->user()->name }} ({{ auth()->user()->role }})</p>
             </div>
             @include('layouts.partials.sidebar-menu')

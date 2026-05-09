@@ -55,13 +55,13 @@
 
                 <div class="rounded-lg bg-white border border-gray-200 p-3">
                     <p class="font-semibold text-indigo-600">Admin</p>
-                    <p>Email: admin@sipat.test</p>
+                    <p>Email: admin@vend.test</p>
                     <p>Password: password</p>
                 </div>
 
                 <div class="rounded-lg bg-white border border-gray-200 p-3">
                     <p class="font-semibold text-yellow-600">Petugas</p>
-                    <p>Email: petugas@sipat.test</p>
+                    <p>Email: petugas@vend.test</p>
                     <p>Password: password</p>
                 </div>
 

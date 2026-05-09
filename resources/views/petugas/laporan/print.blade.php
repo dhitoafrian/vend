@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Laporan SIPAT</title>
+    <title>Cetak Laporan VEND</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
         h1, h2 { margin: 0 0 8px 0; }
@@ -13,7 +13,7 @@
     </style>
 </head>
 <body onload="window.print()">
-    <h1>Laporan SIPAT</h1>
+    <h1>Laporan VEND</h1>
     <p>Periode: {{ $tanggalMulai?->format('Y-m-d') ?? '-' }} s/d {{ $tanggalSelesai?->format('Y-m-d') ?? '-' }}</p>
 
     <h2>Data Peminjaman</h2>
