@@ -1,45 +1,39 @@
 <x-layouts.dashboard title="Pengembalian Alat">
-    <div class="grid lg:grid-cols-2 gap-4">
-        <div class="bg-white rounded shadow p-4">
-            <h2 class="font-semibold mb-3">Peminjaman Aktif</h2>
+    <div class="grid lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h2 class="font-black text-slate-800">Peminjaman Aktif</h2>
+            </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b text-left">
-                            <th class="py-2">Alat</th>
-                            <th>Rencana Kembali</th>
-                            <th>Status</th>
-                            <th class="text-right">Aksi</th>
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold">Alat</th>
+                            <th class="px-6 py-3 font-semibold">Rencana Kembali</th>
+                            <th class="px-6 py-3 font-semibold text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100">
                         @forelse ($myActiveLoans as $item)
                             @php($detail = $item->detailPeminjaman->first())
-                            <tr class="border-b">
-                                <td class="py-2">{{ $detail?->alat?->nama_alat }} ({{ $detail?->jumlah }})</td>
-                                <td>{{ $item->tanggal_kembali_rencana?->format('Y-m-d') }}</td>
-                                <td>
-                                    @if ($item->status === 'tunda_pengembalian')
-                                        <span class="text-amber-600">Menunggu verifikasi</span>
-                                    @else
-                                        <span class="text-green-600">Sedang dipinjam</span>
-                                    @endif
-                                </td>
-                                <td class="text-right">
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="px-6 py-4 font-medium text-slate-800">{{ $detail?->alat?->nama_alat }} ({{ $detail?->jumlah }})</td>
+                                <td class="px-6 py-4">{{ $item->tanggal_kembali_rencana?->format('Y-m-d') }}</td>
+                                <td class="px-6 py-4 text-right">
                                     @if ($item->status === 'disetujui')
                                         <form method="POST" action="{{ route('peminjam.pengembalian.store') }}" class="inline">
                                             @csrf
                                             <input type="hidden" name="peminjaman_id" value="{{ $item->id }}">
-                                            <button class="text-blue-600">Ajukan Pengembalian</button>
+                                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-lg px-3 py-1.5 transition-colors">Ajukan Kembali</button>
                                         </form>
                                     @else
-                                        <button disabled class="text-gray-400 cursor-not-allowed">Sudah diajukan</button>
+                                        <span class="text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg">Menunggu verifikasi</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-2 text-center text-gray-500">Tidak ada peminjaman aktif.</td>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-500">Tidak ada peminjaman aktif.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -47,37 +41,43 @@
             </div>
         </div>
 
-        <div class="bg-white rounded shadow p-4">
-            <h2 class="font-semibold mb-3">Riwayat Pengembalian Saya</h2>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h2 class="font-black text-slate-800">Riwayat Pengembalian</h2>
+            </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b text-left">
-                            <th class="py-2">Tanggal Kembali</th>
-                            <th>Ketepatan</th>
-                            <th>Denda</th>
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-3 font-semibold">Tanggal</th>
+                            <th class="px-6 py-3 font-semibold">Ketepatan</th>
+                            <th class="px-6 py-3 font-semibold">Denda</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100">
                         @forelse ($myPengembalian as $item)
-                            <tr class="border-b">
-                                <td class="py-2">{{ $item->tanggal_kembali?->format('Y-m-d') }}</td>
-                                <td>
-                                    <span class="inline-block px-2 py-1 text-xs rounded {{ $item->status === 'terlambat' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
-                                        {{ ucfirst($item->status) }}
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="px-6 py-4">{{ $item->tanggal_kembali?->format('Y-m-d') }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider {{ $item->status === 'terlambat' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                        {{ $item->status }}
                                     </span>
                                 </td>
-                                <td>Rp {{ number_format($item->denda, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-rose-600 font-semibold">Rp {{ number_format($item->denda, 0, ',', '.') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="py-2 text-center text-gray-500">Belum ada pengembalian.</td>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-500">Belum ada riwayat pengembalian.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">{{ $myPengembalian->links() }}</div>
+            @if($myPengembalian->hasPages())
+            <div class="p-4 border-t border-slate-100">
+                {{ $myPengembalian->links() }}
+            </div>
+            @endif
         </div>
     </div>
 </x-layouts.dashboard>

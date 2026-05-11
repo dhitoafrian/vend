@@ -35,10 +35,12 @@ class KategoriController extends Controller
     {
         $request->validate([
             'nama_kategori' => 'required|string|max:255|unique:kategoris,nama_kategori',
+            'denda_per_hari' => 'required|integer|min:5000',
         ]);
 
         Kategori::create([
-            'nama_kategori' => $request->nama_kategori
+            'nama_kategori' => $request->nama_kategori,
+            'denda_per_hari' => $request->denda_per_hari,
         ]);
 
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil ditambah!');
@@ -66,11 +68,13 @@ class KategoriController extends Controller
     public function update(Request $request, Kategori $kategori)
     {
         $request->validate([
-            'nama_kategori' => 'required|string|max:255|unique:kategoris,nama_kategori,' . $kategori->id
+            'nama_kategori' => 'required|string|max:255|unique:kategoris,nama_kategori,' . $kategori->id,
+            'denda_per_hari' => 'required|integer|min:5000',
         ]);
 
         $kategori->update([
-            'nama_kategori' => $request->nama_kategori
+            'nama_kategori' => $request->nama_kategori,
+            'denda_per_hari' => $request->denda_per_hari,
         ]);
 
 

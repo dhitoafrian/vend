@@ -8,6 +8,7 @@ class Kategori extends Model
 {
     protected $fillable = [
         'nama_kategori',
+        'denda_per_hari',
     ];
 
     public function alat()
