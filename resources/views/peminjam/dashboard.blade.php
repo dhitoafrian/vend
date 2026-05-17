@@ -31,9 +31,9 @@
             @endif
         </div>
 
-        <div class="space-y-3">
+        <div id="pending-list-container" class="space-y-3">
             @forelse ($pendingPeminjaman as $item)
-                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <div id="peminjaman-card-{{ $item->id }}" class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <div class="flex-1 min-w-0 mr-3">
                         <p class="text-sm font-bold text-slate-800 truncate">
                             {{ $item->detailPeminjaman->first()?->alat?->nama ?? 'Alat tidak tersedia' }}
@@ -52,4 +52,97 @@
             @endforelse
         </div>
     </div>
+
+        <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-4 w-full max-w-sm pointer-events-none"></div>
+
+    <!-- Pusher JS -->
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
+    <script>
+        const pusher = new Pusher('a8daa7028b304a7ce99c', {
+        cluster: 'ap1',
+        forceTLS: true
+    });
+
+    // Subscribe ke channel spesifik user yang sedang login
+    const userId = "{{ auth()->id() }}";
+    const channel = pusher.subscribe(`peminjam-channel.${userId}`);
+
+    // Synthesizer suara audio dinamis native
+    function playSoundEffect(isSuccess) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+
+            const tone = (freq, duration, type = 'sine', vol = 0.15) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(vol, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                osc.start(now);
+                osc.stop(now + duration);
+            };
+
+            if (isSuccess) {
+                // Suara Ceria Ding-Ding (Disetujui)
+                tone(523.25, 0.25); // C5
+                setTimeout(() => tone(659.25, 0.35), 80); // E5
+            } else {
+                // Suara Alarm Buzzer (Ditolak)
+                tone(180, 0.4, 'sawtooth', 0.2);
+            }
+        } catch(e) {}
+    }
+
+    // Listener status peminjaman diperbarui
+    channel.bind('peminjaman.status.diperbarui', function(data) {
+        console.log("Status update received:", data);
+
+        const disetujui = data.status === 'disetujui';
+        
+        // 1. Bunyikan efek suara spesifik
+        playSoundEffect(disetujui);
+
+        // 2. Munculkan Toast pop-up premium
+        const toast = document.createElement('div');
+        toast.className = `flex items-start gap-4 bg-white/95 backdrop-blur-md border border-slate-100 rounded-3xl p-5 shadow-2xl transition-all duration-500 ease-out transform translate-x-full opacity-0 border-l-4 ${disetujui ? 'border-l-emerald-500' : 'border-l-rose-500'}`;
+        toast.innerHTML = `
+            <div class="flex-1">
+                <h4 class="text-sm font-black text-slate-800 tracking-tight">${disetujui ? 'Pengajuan Disetujui! 🎉' : 'Pengajuan Ditolak ❌'}</h4>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed">Peminjaman alat <strong>${data.alat_name}</strong> (${data.jumlah} unit) telah ${data.status} oleh petugas.</p>
+            </div>
+        `;
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(() => toast.classList.remove('translate-x-full', 'opacity-0'), 100);
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => toast.remove(), 600);
+        }, 6000);
+
+        // 3. Update DOM Dashboard (Hapus kartu yang sudah disetujui/ditolak karena bukan pending lagi)
+        const targetCard = document.getElementById(`peminjaman-card-${data.id}`);
+        if (targetCard) {
+            targetCard.classList.add('scale-95', 'opacity-0', 'transition-all', 'duration-500');
+            setTimeout(() => {
+                targetCard.remove();
+                // Jika daftar pending habis, tampilkan state kosong
+                const container = document.getElementById('pending-list-container');
+                if (container && container.children.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-10">
+                            <svg class="w-10 h-10 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <p class="text-sm text-slate-400">Tidak ada alat yang menunggu persetujuan</p>
+                        </div>
+                    `;
+                }
+            }, 500);
+        }
+    });
+</script>
+
 </x-layouts.dashboard>

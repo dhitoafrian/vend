@@ -75,6 +75,9 @@ class PeminjamanController extends Controller
             'aktivitas' => "Mengajukan peminjaman #{$peminjaman->id}",
         ]);
 
+        // Broadcast real-time event ke Pusher untuk Petugas/Admin
+        broadcast(new \App\Events\PeminjamanDiajukan($peminjaman));
+
         return back()->with('success', 'Pengajuan peminjaman berhasil dibuat.');
     }
 }

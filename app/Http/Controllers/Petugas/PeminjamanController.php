@@ -45,6 +45,8 @@ class PeminjamanController extends Controller
 
             $peminjaman->update(['status' => 'disetujui']);
 
+            broadcast(new \App\Events\PeminjamanStatusDiperbarui($peminjaman));
+
             LogAktivitas::create([
                 'user_id' => $request->user()->id,
                 'aktivitas' => "Menyetujui peminjaman #{$peminjaman->id}",
@@ -61,6 +63,8 @@ class PeminjamanController extends Controller
         }
 
         $peminjaman->update(['status' => 'ditolak']);
+
+        broadcast(new \App\Events\PeminjamanStatusDiperbarui($peminjaman));
 
         LogAktivitas::create([
             'user_id' => $request->user()->id,
