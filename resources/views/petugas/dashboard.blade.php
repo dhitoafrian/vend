@@ -101,8 +101,8 @@
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-24 right-6 z-50 flex flex-col gap-4 w-full max-w-sm pointer-events-none"></div>
+    <!-- Toast Container (Fully Optimized for Mobile & Desktop) -->
+    <div id="toast-container" class="fixed top-4 md:top-24 right-0 md:right-6 left-0 md:left-auto px-4 md:px-0 z-50 flex flex-col gap-4 w-full max-w-sm pointer-events-none"></div>
 
     <!-- Pusher Integration JavaScript -->
     <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
