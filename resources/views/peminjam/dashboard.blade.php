@@ -36,7 +36,7 @@
                 <div id="peminjaman-card-{{ $item->id }}" class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <div class="flex-1 min-w-0 mr-3">
                         <p class="text-sm font-bold text-slate-800 truncate">
-                            {{ $item->detailPeminjaman->first()?->alat?->nama ?? 'Alat tidak tersedia' }}
+                            {{ $item->detailPeminjaman->first()?->alat?->nama_alat ?? 'Alat tidak tersedia' }}
                         </p>
                         <p class="text-xs text-slate-500 mt-0.5">
                             {{ \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d M Y') }}
