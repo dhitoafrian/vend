@@ -80,4 +80,96 @@
             @endif
         </div>
     </div>
+
+    <!-- Toast Container (Fully Optimized for Mobile & Desktop) -->
+    <div id="toast-container" class="fixed top-4 md:top-24 right-0 md:right-6 left-0 md:left-auto px-4 md:px-0 z-50 flex flex-col gap-4 w-full max-w-sm pointer-events-none"></div>
+
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
+    <script>
+        // Initialize Pusher Client
+        const pusher = new Pusher('a8daa7028b304a7ce99c', {
+            cluster: 'ap1',
+            forceTLS: true
+        });
+
+        // Subscribe to user-specific channel
+        const userId = "{{ auth()->id() }}";
+        const channel = pusher.subscribe(`peminjam-channel.${userId}`);
+
+        // Native Web Audio API success bell chime (C5 -> E5)
+        function playSuccessSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+
+                const tone = (freq, duration, type = 'sine', vol = 0.15) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(vol, now + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                    osc.start(now);
+                    osc.stop(now + duration);
+                };
+
+                tone(523.25, 0.25); // C5
+                setTimeout(() => tone(659.25, 0.35), 80); // E5
+            } catch(e) {}
+        }
+
+        // Show premium Glassmorphic Toast Notification
+        function showToast(title, message) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = "flex items-start gap-4 bg-white/95 backdrop-blur-md border border-slate-100 rounded-3xl p-5 shadow-2xl transition-all duration-500 ease-out transform translate-x-full opacity-0 max-w-sm w-full pointer-events-auto border-l-4 border-l-emerald-500";
+            
+            toast.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-black text-slate-800 tracking-tight">${title}</h4>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">${message}</p>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            playSuccessSound();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+                toast.classList.add('translate-x-0', 'opacity-100');
+            }, 100);
+
+            // Auto-dismiss and reload page to sync lists perfectly
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0', 'opacity-100');
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                    window.location.reload();
+                }, 550);
+            }, 4000);
+        }
+
+        // Listen for return verified event
+        channel.bind('pengembalian.diverifikasi', function(data) {
+            console.log("Return verified received:", data);
+
+            // Format currency rupiah
+            const formattedDenda = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                maximumFractionDigits: 0
+            }).format(data.denda).replace("IDR", "Rp");
+
+            showToast(
+                "Pengembalian Sukses! 🎉",
+                `Pengembalian alat <strong>${data.alat_name}</strong> telah disetujui oleh petugas. ${data.denda > 0 ? `Denda keterlambatan sebesar <strong>${formattedDenda}</strong> telah dicatat.` : 'Tepat waktu!'}`
+            );
+        });
+    </script>
 </x-layouts.dashboard>

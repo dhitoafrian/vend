@@ -14,7 +14,7 @@ class PeminjamanDiajukan implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $peminjaman;
+    public Peminjaman $peminjaman;
 
     /**
      * Create a new event instance.

@@ -55,6 +55,9 @@ class PengembalianController extends Controller
             ]);
         });
 
+        // Broadcast real-time ke peminjam
+        broadcast(new \App\Events\PengembalianDiverifikasi($pengembalian));
+
         return back()->with('success', 'Verifikasi pengembalian berhasil diproses.');
     }
 }

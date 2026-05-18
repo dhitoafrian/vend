@@ -13,7 +13,7 @@ class PeminjamanStatusDiperbarui implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $peminjaman;
+    public Peminjaman $peminjaman;
 
     public function __construct(Peminjaman $peminjaman)
     {

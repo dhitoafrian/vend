@@ -59,8 +59,8 @@ class PengembalianController extends Controller
         $status = $telatHari > 0 ? 'terlambat' : 'tepat';
         $denda = $telatHari * 5000;
 
-        DB::transaction(function () use ($loan, $validated, $denda, $status, $request, $tanggalKembali) {
-            Pengembalian::create([
+        $pengembalian = DB::transaction(function () use ($loan, $validated, $denda, $status, $request, $tanggalKembali) {
+            $created = Pengembalian::create([
                 'peminjaman_id' => $loan->id,
                 'tanggal_kembali' => $tanggalKembali->toDateString(),
                 'denda' => $denda,
@@ -73,7 +73,12 @@ class PengembalianController extends Controller
                 'user_id' => $request->user()->id,
                 'aktivitas' => "Mengajukan pengembalian untuk peminjaman #{$loan->id}",
             ]);
+
+            return $created;
         });
+
+        // Broadcast real-time ke petugas
+        broadcast(new \App\Events\PengembalianDiajukan($pengembalian));
 
         return back()->with('success', 'Pengajuan pengembalian berhasil dibuat.');
     }
