@@ -38,9 +38,77 @@ Aplikasi ini memiliki pembagian peran yang ketat (*Role-based Access Control*) s
 
 * **Backend:** Laravel 11.x (PHP 8.2+)
 * **Frontend:** Laravel Blade, TailwindCSS (Glassmorphism & premium UI details), Vanilla JavaScript
-* **Database:** SQLite / MySQL / PostgreSQL
+* **Database:** MySQL / PostgreSQL (Production), SQLite (Local Testing)
 * **WebSockets Service:** Pusher Channels
 * **Audio Engine:** Browser Native Web Audio API
+
+---
+
+## 📊 Struktur Database & Skema Relasi (ERD)
+
+Untuk menjamin integritas data inventaris dan pencatatan audit trail yang akurat, sistem database VEND dirancang menggunakan relasi relasional yang ketat:
+
+```mermaid
+erDiagram
+    users ||--o{ peminjamen : "melakukan"
+    users ||--o{ log_aktivitas : "mencatat tindakan"
+    kategoris ||--o{ alats : "mengelompokkan"
+    alats ||--o{ detail_peminjamans : "terdapat dalam"
+    peminjamens ||--o{ detail_peminjamans : "memiliki"
+    peminjamens ||--|| pengembalians : "memiliki"
+
+    users {
+        bigint id PK
+        string name
+        string email
+        string role "admin | petugas | peminjam"
+        string password
+    }
+
+    kategoris {
+        bigint id PK
+        string nama_kategori
+        decimal denda_per_hari
+    }
+
+    alats {
+        bigint id PK
+        string nama_alat
+        bigint kategori_id FK
+        string foto
+        integer stok
+        string status "tersedia | dipinjam"
+    }
+
+    peminjamen {
+        bigint id PK
+        bigint user_id FK
+        date tanggal_pinjam
+        date tanggal_kembali_rencana
+        string status "pending | disetujui | ditolak | selesai"
+    }
+
+    detail_peminjamans {
+        bigint id PK
+        bigint peminjaman_id FK
+        bigint alat_id FK
+        integer jumlah
+    }
+
+    pengembalians {
+        bigint id PK
+        bigint peminjaman_id FK
+        date tanggal_kembali
+        decimal denda
+        string status "selesai | terlambat"
+    }
+
+    log_aktivitas {
+        bigint id PK
+        bigint user_id FK
+        string aktivitas
+    }
+```
 
 ---
 
@@ -111,8 +179,9 @@ Sistem penyiaran VEND dirancang **sangat cerdas dan adaptif** terhadap lingkunga
 1. **Keamanan SSL Otomatis:**
    * Di **Lokal (Laragon)**, aplikasi menggunakan jalur tidak aman HTTP Port 80 untuk memintas error sertifikat PHP (`cURL error 77`).
    * Di **Produksi (Railway)**, Anda **tidak perlu** mengatur `PUSHER_SCHEME` dan `PUSHER_PORT` pada tab Variables Railway. Aplikasi secara otomatis akan mendeteksi dan beralih ke jalur aman **HTTPS (Port 443)** demi keamanan transaksi data.
-2. **Bypass Queue Worker:**
-   * Kita menggunakan antarmuka `ShouldBroadcastNow` pada file event agar notifikasi real-time terkirim secara instan tanpa perlu menjalankan Queue worker tambahan (`php artisan queue:work`) di server hosting Anda.
+2. **Skalabilitas & Manajemen Antrean (Synchronous vs Asynchronous Queue):**
+   * **Konfigurasi Demo & Free-Tier:** Di dalam berkas event `PeminjamanDiajukan` dan `PeminjamanStatusDiperbarui`, aplikasi ini menggunakan implementasi `ShouldBroadcastNow`. Hal ini sengaja dipilih untuk mempermudah proses **pengujian lokal** dan **demo/free-tier hosting** (seperti Railway Free Plan) agar notifikasi real-time terkirim secara instan tanpa memerlukan server Queue worker tambahan (`php artisan queue:work`) yang memakan resource memori konstan.
+   * **Rekomendasi Skala Industri (Production):** Untuk deployment berskala besar dengan trafik tinggi, sangat direkomendasikan untuk mengubah implementasi interface dari `ShouldBroadcastNow` menjadi `ShouldBroadcast` biasa. Perubahan ini akan mengalihkan proses panggilan API pihak ketiga (Pusher) menjadi *asynchronous* melalui antrean antarmuka (Queue) menggunakan database/Redis. Hal ini menjaga aplikasi utama tetap responsif dan mencegah hambatan loading jika jaringan server Pusher eksternal mengalami kelambatan atau kegagalan koneksi.
 
 ---
 
